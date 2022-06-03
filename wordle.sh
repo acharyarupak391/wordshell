@@ -140,10 +140,12 @@ do
     
     # check if ERROR is not empty
     if [ ! -z "$ERROR" ]; then
-        print_8bit_fg $RED " ${bold}${ERROR}${normal}\n"
+        print_8bit_fg $RED "${bold}${ERROR}${normal}\n"
+    else
+        printf " "
     fi
     
-    read -p " Guess the word: " word
+    read -p "Guess the word: " word
     
     # convert word to lowercase
     word=$(echo $word | tr '[:upper:]' '[:lower:]')
