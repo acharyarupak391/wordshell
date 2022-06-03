@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# not in word #3a3a3c rgb(58, 58, 60) 8
-# correct position #538d4e rgb(83 141 78) 34
-# wrong position #b59f3b rgb(181, 159, 59) 172
-
 WORD_LENGTH=5
 GUESSES=6
 
