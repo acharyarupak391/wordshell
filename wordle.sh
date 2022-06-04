@@ -115,19 +115,18 @@ function init_empty_grid {
     done
 }
 
-# select only 5-letter words from words.txt and write to out.txt
-# grep -E '^.{6}$' words.txt > out.txt
-
-FILE_NAME="new.txt"
+COMMON_FILE_NAME="data/common.txt"
+VALID_FILE_NAME="data/valid.txt"
 
 # get the path of the script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-FILE_PATH="$DIR/$FILE_NAME"
+COMMON_FILE_PATH="$DIR/$COMMON_FILE_NAME"
+VALID_FILE_PATH="$DIR/$VALID_FILE_NAME"
 
 init_empty_grid
 
-WORD=$(shuf -n 1 $FILE_PATH | tr -dc '[:alpha:]' | tr '[:upper:]' '[:lower:]')
+WORD=$(shuf -n 1 $COMMON_FILE_PATH | tr -dc '[:alpha:]' | tr '[:upper:]' '[:lower:]')
 
 ERROR=""
 
@@ -153,7 +152,7 @@ do
     # check if word length is equal to WORD_LENGTH
     if [ ${#word} -ne $WORD_LENGTH ]; then
         ERROR="Word must be a $WORD_LENGTH letter word!"
-    elif grep -wq "$word" "$FILE_PATH" || [[ "$word" == "$WORD" ]]
+    elif grep -wq "$word" "$COMMON_FILE_PATH" || grep -wq "$word" "$VALID_FILE_PATH" || [[ "$word" == "$WORD" ]]
     then
         update_grid $word $guess
         guess=$((guess+1))
@@ -179,7 +178,7 @@ do
         print_title
         print_grid
         
-        print_8bit_fg $RED "\n ${bold}Sorry, you lost. The word was '$WORD'${normal}\n"
+        print_8bit_fg $RED "\n ${bold}Oops, you lost. The word was '$WORD'${normal}\n"
         break
     fi
     
