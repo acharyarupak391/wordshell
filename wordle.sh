@@ -31,6 +31,50 @@ function print_8bit_bg {
     printf "\033[48;5;%sm $2 \033[0m" "$1"
 }
 
+function contains_element {
+    local item="$1"
+    shift
+    local arr=("$@")
+    
+    if [[ "${arr[*]}" =~ "${item}" ]]; then
+        echo "true"
+    fi
+    
+    if [[ ! "${arr[*]}" =~ "${item}" ]]; then
+        echo "false"
+    fi
+}
+
+function get_index {
+    local item="$1"
+    shift
+    local arr=("$@")
+    
+    for i in "${!arr[@]}"; do
+        if [[ "${arr[$i]}" == "${item}" ]]; then
+            echo "$i"
+        fi
+    done
+}
+
+function get_index_of_substring {
+    local string="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+    local substring="$(echo "$2" | tr '[:upper:]' '[:lower:]')"
+    local index=0
+    
+    while [[ "${string:$index:${#substring}}" != "${substring}" ]]; do
+        index=$((index+1))
+        
+        # break if index is greater than string length
+        if [[ $index -gt ${#string} ]]; then
+            index=""
+            break
+        fi
+    done
+    
+    echo "$index"
+}
+
 function print_word {
     local word="$1"
     shift
@@ -65,6 +109,66 @@ function print_title {
         printf " "
     done
     printf "${normal}\n\n\n"
+}
+
+function update_grid_new {
+    local word="$1"
+    local row="$2"
+    
+    local -A accepted_indexes;
+    for (( i=0; i<$WORD_LENGTH; i++ )); do
+        local -a val=()
+        if [[ "${word:i:1}" == "${WORD:i:1}" ]]; then
+            accepted_indexes["$i"]="true"
+            val[0]=$MATCH
+        else
+            accepted_indexes["$i"]="false"
+            val[0]=$NO_MATCH
+        fi
+        val[1]=$(echo ${word:i:1}  | tr '[:lower:]' '[:upper:]')
+        GRID["$row,$i"]="${val[@]}"
+    done
+    
+    # prinf accepted indexes hash table
+    for key in "${!accepted_indexes[@]}"; do
+        echo "$key -> ${accepted_indexes[$key]}"
+        printf "\n"
+    done
+    
+    # print grid
+    for (( j=0; j<$WORD_LENGTH; j++ )); do
+        local arr="${GRID["$row,$j"]}"
+        printf "$j: $arr\n"
+    done
+    
+    printf "\n"
+    
+    for (( i=0; i<$WORD_LENGTH; i++ )); do
+        # check if index is in accepted_indexes
+        if [[ "${accepted_indexes[$i]}" == "true" ]]
+        then
+            continue
+        fi
+        
+        local -a val=()
+        
+        # chec if letter is not in WORD
+        local index=$(get_index_of_substring "${WORD}" "${word:i:1}")
+        if [[ ! -n "$index" ]]
+        then
+            val[0]=$NO_MATCH
+        elif [[ -n "$index" ]] && [[ "${accepted_indexes[$i]}" == "false" ]]
+        then
+            accepted_indexes["$index"]="true"
+            val[0]=$WRONG_POSITION
+        else
+            val[0]=$NO_MATCH
+        fi
+        
+        val[1]=$(echo ${word:i:1}  | tr '[:lower:]' '[:upper:]')
+        GRID["$row,$i"]="${val[@]}"
+    done
+    
 }
 
 function update_grid {
@@ -127,6 +231,10 @@ VALID_FILE_PATH="$DIR/$VALID_FILE_NAME"
 init_empty_grid
 
 WORD=$(shuf -n 1 $COMMON_FILE_PATH | tr -dc '[:alpha:]' | tr '[:upper:]' '[:lower:]')
+WORD="crane"
+
+update_grid_new "drama" 0
+exit
 
 ERROR=""
 
@@ -154,7 +262,8 @@ do
         ERROR="Word must be a $WORD_LENGTH letter word!"
     elif grep -wq "$word" "$COMMON_FILE_PATH" || grep -wq "$word" "$VALID_FILE_PATH" || [[ "$word" == "$WORD" ]]
     then
-        update_grid $word $guess
+        update_grid_new $word $guess
+        # update_grid $word $guess
         guess=$((guess+1))
         ERROR=""
     else
